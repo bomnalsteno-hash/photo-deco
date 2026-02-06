@@ -10,7 +10,7 @@ const App: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<ArtStyle | null>(null);
-  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+  const [generatedImages, setGeneratedImages] = useState<{ url: string; style: ArtStyle }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -18,14 +18,15 @@ const App: React.FC = () => {
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
     setPreviewUrl(URL.createObjectURL(file));
-    setGeneratedImageUrl(null);
+    // 새로운 사진을 선택하면 그 사진으로 만든 기록만 남기도록 이전 결과는 정리
+    setGeneratedImages([]);
     setError(null);
   };
 
   const handleClearImage = () => {
     setSelectedImage(null);
     setPreviewUrl(null);
-    setGeneratedImageUrl(null);
+    setGeneratedImages([]);
     setError(null);
   };
 
@@ -34,7 +35,6 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    setGeneratedImageUrl(null);
 
     try {
       setLoadingStep("Dreaming up ideas...");
@@ -43,7 +43,11 @@ const App: React.FC = () => {
       setLoadingStep("Painting your memory...");
       const imageUrl = await generateStylizedImage(selectedImage, prompt);
       
-      setGeneratedImageUrl(imageUrl);
+      // 가장 최근 결과가 위로 오도록 누적 저장
+      setGeneratedImages((prev) => [
+        { url: imageUrl, style: selectedStyle },
+        ...prev,
+      ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Oops! Something went wrong.');
     } finally {
@@ -52,19 +56,18 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDownload = () => {
-    if (generatedImageUrl) {
-      const link = document.createElement('a');
-      link.href = generatedImageUrl;
-      link.download = `art-diary-${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+  const handleDownload = (imageUrl: string) => {
+    if (!imageUrl) return;
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `art-diary-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-20 bg-slate-50 bg-[radial-gradient(circle_at_top,_rgba(199,210,254,0.45),_transparent_55%),_radial-gradient(circle_at_bottom,_rgba(251,207,232,0.35),_transparent_55%)]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-dashed border-slate-200">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -166,36 +169,46 @@ const App: React.FC = () => {
         </div>
 
         {/* Generated Result Section */}
-        {generatedImageUrl && (
+        {generatedImages.length > 0 && (
           <div className="mt-12 pt-12 border-t-2 border-dashed border-slate-200 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-slate-800 mb-2">✨ Tada! Here is your art ✨</h2>
-              <p className="text-slate-500">Right-click or use the button to save your masterpiece.</p>
+              <h2 className="text-3xl font-bold text-slate-800 mb-2">✨ Tada! Your little gallery ✨</h2>
+              <p className="text-slate-500">Each time you decorate, the new artwork gently joins the collection below.</p>
             </div>
 
-            <div className="relative max-w-2xl mx-auto bg-white p-4 pb-16 rounded-[2rem] shadow-2xl rotate-1 transform transition-transform hover:rotate-0 border border-slate-100">
-               {/* Tape */}
-               <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-indigo-100/80 rotate-1 backdrop-blur-sm z-10"></div>
-
-              <div className="rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
-                <img 
-                  src={generatedImageUrl} 
-                  alt="Generated Art" 
-                  className="w-full h-auto"
-                />
-              </div>
-
-              <div className="absolute bottom-4 right-6 font-['Fredoka'] text-slate-300 text-xl font-bold rotate-[-5deg]">
-                 #{selectedStyle}
-              </div>
-
-               <button
-                  onClick={handleDownload}
-                  className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-slate-700 transition-colors flex items-center gap-2 active:scale-95"
+            <div className="grid gap-8 md:grid-cols-2">
+              {generatedImages.map((image, index) => (
+                <div
+                  key={`${image.url}-${index}`}
+                  className="relative bg-white/95 p-4 pb-16 rounded-[2rem] shadow-xl rotate-1 transform transition-transform hover:rotate-0 border border-slate-100/80"
                 >
-                  <Download size={20} />
-                  Save Image
-                </button>
+                  {/* Tape */}
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-28 h-9 bg-indigo-100/80 rotate-1 backdrop-blur-sm z-10" />
+
+                  <div className="rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+                    <img 
+                      src={image.url} 
+                      alt={`Generated Art ${index + 1}`} 
+                      className="w-full h-auto"
+                    />
+                  </div>
+
+                  <div className="absolute bottom-4 left-6 font-['Fredoka'] text-slate-300 text-sm font-semibold -rotate-3">
+                    #{image.style}
+                  </div>
+                  <div className="absolute bottom-4 right-6 text-xs text-slate-400 font-medium">
+                    Take {generatedImages.length - index}
+                  </div>
+
+                  <button
+                    onClick={() => handleDownload(image.url)}
+                    className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-7 py-2.5 rounded-full text-sm font-semibold shadow-lg hover:bg-slate-700 transition-colors flex items-center gap-2 active:scale-95"
+                  >
+                    <Download size={18} />
+                    Save Image
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
