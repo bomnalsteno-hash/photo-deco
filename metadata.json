@@ -1,0 +1,5 @@
+{
+  "name": "ArtStyle Prompt Architect",
+  "description": "An AI-powered tool that analyzes your photos and generates professional-grade art direction prompts based on specific artistic styles using Gemini.",
+  "requestFramePermissions": []
+}
