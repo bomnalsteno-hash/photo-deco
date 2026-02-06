@@ -67,7 +67,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-slate-50 bg-[radial-gradient(circle_at_top,_rgba(199,210,254,0.45),_transparent_55%),_radial-gradient(circle_at_bottom,_rgba(251,207,232,0.35),_transparent_55%)]">
+    <div className="min-h-screen pb-20">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-dashed border-slate-200">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
