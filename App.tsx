@@ -5,6 +5,7 @@ import { generatePrompt, generateStylizedImage } from './services/geminiService'
 import StyleCard from './components/StyleCard';
 import ImageUploader from './components/ImageUploader';
 import { Wand2, Download, Sparkles, AlertCircle, Heart } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 const App: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -214,6 +215,7 @@ const App: React.FC = () => {
         )}
 
       </main>
+      <Analytics />
     </div>
   );
 };
